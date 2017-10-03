@@ -1,10 +1,19 @@
 defmodule ScraperTest do
   use ExUnit.Case
   doctest Scraper
+  alias Scraper.Jergozo
+
+  test "parses index pages and return all word URLs in it" do
+    html = File.read!("test/data/jergozo_word_index.html")
+    {:ok, urls, next_page_url} = Jergozo.word_urls_from_index_page(html)
+
+    assert Enum.count(urls) == 100
+    assert next_page_url == "/letra/a/pagina/2"
+  end
 
   test "parses term and definition" do
     html = File.read!("test/data/jergozo_definition.html")
-    {:ok, definitions} = Scraper.Jergozo.parse(html)
+    {:ok, definitions} = Jergozo.parse_definition_page(html)
 
     assert definitions == [
       %{term: "macana", definition: "Coa, palo endurecido al fuego con que los indios labraban la tierra.", examples: [], countries: ["colombia", "costa rica", "méxico"]},

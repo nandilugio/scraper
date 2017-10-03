@@ -1,6 +1,34 @@
 defmodule Scraper do
   defmodule Jergozo do
-    def parse(html) do
+    def first_page_urls do
+      ?a..?z
+        |> Enum.map(fn(char) ->
+            "/letra/#{List.to_string([char])}"
+        end)
+    end
+
+    def word_urls_from_index_page(html) do
+      prepared_html = prepare_html(html)
+      urls =
+        prepared_html
+        |> Floki.find(".results-list li > a")
+        |> Enum.map(fn(anchor_node) ->
+          anchor_node
+          |> Floki.attribute("href")
+          |> List.first
+        end)
+
+      next_page_url =
+        prepared_html
+        |> Floki.find(".pagination-container .pagination-link a")
+        |> List.last
+        |> Floki.attribute("href")
+        |> List.first
+
+      {:ok, urls, next_page_url}
+    end
+
+    def parse_definition_page(html) do
       definitions = 
         prepare_html(html)
         |> Floki.find(".word-container")
