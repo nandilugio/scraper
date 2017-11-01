@@ -14,14 +14,15 @@ defmodule Scraper.Mixfile do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger, :httpotion]
     ]
   end
 
   # Run "mix help deps" to learn about dependencies.
-	defp deps do
-		[
-			{:floki, "~> 0.18.0"}
-		]
-	end
+  defp deps do
+    [
+      {:floki, "~> 0.18.0"},
+      {:httpotion, "~> 3.0.2"}
+    ]
+  end
 end
