@@ -2,36 +2,58 @@ defmodule Jergozo do
   defmodule Scraper do
     alias Jergozo.Parser
 
-    def run do
-      letter_index_first_page_urls()
-      |> Enum.take(2) #TODO
-      |> Enum.flat_map(&scrap_word_urls/1)
-      |> Enum.take(2) #TODO
-      |> Enum.flat_map(fn(word_url) ->
-        word_url
-        |> get_body
-        |> Parser.definitions_from_definition_page
+    def run(filename) do
+      {:ok, file} = File.open(filename, [:write])
+      IO.binwrite(file, "\"Palabra\",\"Paises\",\"Definición\",\"Ejemplos\"\n")
+
+      letter_index_first_page_paths()
+      |> Enum.take(1) #TODO
+      |> Enum.flat_map(&scrap_word_paths/1)
+      |> Enum.take(5) #TODO
+      |> Enum.each(fn(word_path) ->
+        word_path
+          |> get_page_body
+          |> Parser.definitions_from_word_page
+          |> Enum.map(&format_definition/1)
+          |> Enum.each(&IO.binwrite(file, &1))
       end)
+
+      File.close(file)
     end
 
-    def scrap_word_urls(:nomore), do: []
-    def scrap_word_urls(letter_page_url) do
-      letter_page_url
-      |> get_body
-      |> Parser.word_urls_from_letter_index_page
-      |> (fn({word_urls, next_page_url}) ->
-        word_urls # ++ scrap_word_urls(next_page_url) #TODO
+    defp scrap_word_paths(:nomore), do: []
+    defp scrap_word_paths(letter_page_path) do
+      letter_page_path
+      |> get_page_body
+      |> Parser.word_paths_from_letter_index_page
+      |> (fn({word_paths, next_page_path}) ->
+        word_paths ++ scrap_word_paths(next_page_path)
       end).()
     end
 
-
-    defp get_body(path) do
+    defp get_page_body(path) do
       "http://jergozo.com" <> path
       |> HTTPotion.get!
       |> Map.get(:body)
     end
 
-    defp letter_index_first_page_urls do
+    defp format_definition(definition) do
+      quoted_values = [
+          definition.term,
+          Enum.join(definition.countries, "/"),
+          definition.definition,
+          Enum.join(definition.examples, ". "),
+        ]
+        |> Enum.map(fn(value) ->
+          escaped_value = value
+            |> String.replace("\"", "\\\"")
+            |> String.replace("\n", "\\n")
+          "\"#{escaped_value}\""
+        end)
+      Enum.join(quoted_values, ",") <> "\n"
+    end
+
+    defp letter_index_first_page_paths do
       ?a..?z
         |> Enum.map(fn(char) ->
             "/letra/#{List.to_string([char])}"
@@ -42,7 +64,7 @@ defmodule Jergozo do
   #####################################################################################################################
 
   defmodule Parser do
-    def word_urls_from_letter_index_page(html) do
+    def word_paths_from_letter_index_page(html) do
       prepared_html = prepare_html(html)
       urls =
         prepared_html
@@ -53,22 +75,22 @@ defmodule Jergozo do
           |> List.first
         end)
 
-      next_page_url =
+      next_page_path =
         prepared_html
         |> Floki.find(".pagination-container .pagination-link a:fl-contains('Siguiente')")
         |> List.first
         |> case do
           nil -> :nomore
-          a_element ->
-            a_element
+          element ->
+            element
             |> Floki.attribute("href")
             |> List.first
         end
 
-        {urls, next_page_url}
+        {urls, next_page_path}
     end
 
-    def definitions_from_definition_page(html) do
+    def definitions_from_word_page(html) do
       prepare_html(html)
       |> Floki.find(".word-container")
       |> Enum.map(fn(container_node) ->

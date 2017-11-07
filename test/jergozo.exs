@@ -2,9 +2,9 @@ defmodule JergozoScraperTest do
   use ExUnit.Case
   import Jergozo.Scraper
 
-  test "" do
-    ["/definir/a", "/definir/a-babucha", "/definir/a-balazo-limpio"]
-  end
+  # test "" do
+  #   ["/definir/a", "/definir/a-babucha", "/definir/a-balazo-limpio"]
+  # end
 end
 
 defmodule JergozoParserTest do
@@ -13,7 +13,7 @@ defmodule JergozoParserTest do
 
   test "parses index pages and return all word URLs in it" do
     html = File.read!("test/data/jergozo_word_index.html")
-    {:ok, urls, next_page_url} = word_urls_from_letter_index_page(html)
+    {urls, next_page_url} = word_paths_from_letter_index_page(html)
 
     assert Enum.count(urls) == 100
     assert next_page_url == "/letra/a/pagina/2"
@@ -21,7 +21,7 @@ defmodule JergozoParserTest do
 
   test "parses term and definition" do
     html = File.read!("test/data/jergozo_definition.html")
-    {:ok, definitions} = definitions_from_definition_page(html)
+    definitions = definitions_from_word_page(html)
 
     assert definitions == [
       %{term: "macana", definition: "Coa, palo endurecido al fuego con que los indios labraban la tierra.", examples: [], countries: ["colombia", "costa rica", "méxico"]},
