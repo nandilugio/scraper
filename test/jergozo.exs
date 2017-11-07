@@ -2,9 +2,9 @@ defmodule JergozoScraperTest do
   use ExUnit.Case
   import Jergozo.Scraper
 
-  # test "run gives us all word urls" do
-  #   assert run == []
-  # end
+  test "" do
+    ["/definir/a", "/definir/a-babucha", "/definir/a-balazo-limpio"]
+  end
 end
 
 defmodule JergozoParserTest do
