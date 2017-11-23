@@ -1,12 +1,13 @@
-defmodule Scraper.Mixfile do
+defmodule ContentAnalysis.Mixfile do
   use Mix.Project
 
   def project do
     [
-      app: :scraper,
+      app: :content_analysis,
       version: "0.1.0",
       elixir: "~> 1.5",
       start_permanent: Mix.env == :prod,
+      escript: [main_module: ContentAnalysis.App],
       deps: deps()
     ]
   end

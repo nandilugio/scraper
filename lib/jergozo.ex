@@ -1,21 +1,28 @@
-defmodule Jergozo do
+defmodule ContentAnalysis.Jergozo do
+  
   defmodule Scraper do
-    alias Jergozo.Parser
+    alias ContentAnalysis.Jergozo.Parser
 
     def run(filename) do
       {:ok, file} = File.open(filename, [:write])
       IO.binwrite(file, "\"Palabra\",\"Paises\",\"Definición\",\"Ejemplos\"\n")
 
       letter_index_first_page_paths()
-      |> Enum.take(1) #TODO
+      # |> Enum.take(2)
       |> Enum.flat_map(&scrap_word_paths/1)
-      |> Enum.take(5) #TODO
+      # |> Enum.take(2)
       |> Enum.each(fn(word_path) ->
         word_path
           |> get_page_body
-          |> Parser.definitions_from_word_page
-          |> Enum.map(&format_definition/1)
-          |> Enum.each(&IO.binwrite(file, &1))
+          |> case do
+            {:ok, body} ->
+              body
+                |> Parser.definitions_from_word_page
+                |> Enum.map(&format_definition/1)
+                |> Enum.each(&IO.binwrite(file, &1))
+            {:err} ->
+              IO.puts(" (!) Skipping word!")
+          end
       end)
 
       File.close(file)
@@ -25,16 +32,38 @@ defmodule Jergozo do
     defp scrap_word_paths(letter_page_path) do
       letter_page_path
       |> get_page_body
-      |> Parser.word_paths_from_letter_index_page
-      |> (fn({word_paths, next_page_path}) ->
-        word_paths ++ scrap_word_paths(next_page_path)
-      end).()
+      |> case do
+        {:ok, body} ->
+          body
+          |> Parser.word_paths_from_letter_index_page
+          |> (fn({word_paths, next_page_path}) ->
+            word_paths ++ scrap_word_paths(next_page_path)
+          end).()
+        {:err} ->
+          IO.puts(" (!) Skipping the remainder of this letter!")
+          []
+      end
     end
 
-    defp get_page_body(path) do
+    def get_page_body(path, opts \\ []) do
+      retry = Keyword.get(opts, :retry, 3)
       "http://jergozo.com" <> path
-      |> HTTPotion.get!
-      |> Map.get(:body)
+      |> IO.inspect(label: "Retrieving")
+      |> HTTPotion.get
+      |> case do
+        %HTTPotion.Response{body: body, status_code: 200} ->
+          IO.puts("Retrieved!")
+          {:ok, body}
+        error_response ->
+          if retry > 0 do
+            IO.puts(" (!) Failed retrieving. Retrying...")
+            get_page_body(path, retry: retry - 1)
+          else
+            IO.puts(" (!) Request failed after retries. Aborting!")
+            IO.inspect(error_response)
+            {:err}
+          end
+        end
     end
 
     defp format_definition(definition) do

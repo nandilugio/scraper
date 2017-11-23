@@ -1,4 +1,4 @@
-defmodule Scraper do
+defmodule ContentAnalysis.Scraper do
   defmodule JergasDeHablaHispana do
     def parse(html) do
       html

@@ -1,6 +1,6 @@
 defmodule JergozoScraperTest do
   use ExUnit.Case
-  import Jergozo.Scraper
+  import ContentAnalysis.Jergozo.Scraper
 
   # test "" do
   #   ["/definir/a", "/definir/a-babucha", "/definir/a-balazo-limpio"]
@@ -9,7 +9,7 @@ end
 
 defmodule JergozoParserTest do
   use ExUnit.Case
-  import Jergozo.Parser
+  import ContentAnalysis.Jergozo.Parser
 
   test "parses index pages and return all word URLs in it" do
     html = File.read!("test/data/jergozo_word_index.html")
